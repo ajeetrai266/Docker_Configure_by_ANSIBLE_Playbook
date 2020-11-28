@@ -1,0 +1,48 @@
+- hosts: all
+  tasks:
+        - name: "Create a Repository for Docker"
+          yum_repository: 
+                name: "docker"
+                baseurl: "https://download.docker.com/linux/centos/7/x86_64/stable/"
+                description: "docker configure"
+                gpgcheck: no
+
+        - name: "Install Docker"
+          command:
+                cmd: "dnf install docker-ce --nobest -y"
+       
+        - name: "Start Docker Engine"
+          service:
+                name: "docker"
+                state: started
+                enabled: yes
+
+        - pip:
+                name: "docker-py"
+
+        - name: "Download HTTPD Image"
+          docker_image:
+                name: "httpd"
+                tag: "latest"
+                source: pull
+
+        - name: "Create a Directory in Controller-N"
+          file:
+                path: "/root/ajeet"
+                state: directory
+        
+        - name: "Launch a Container"
+          docker_container:
+                name: "A1"
+                image: "httpd"
+                ports:
+                        - "8080:80"
+                volumes: "/root/ajeet:/usr/local/apache2/htdocs/"
+                detach: yes
+                state: started
+        
+        - name: "Deploy a folder in that Document Root"
+          copy:
+                dest: "/root/ajeet/a.html"
+                content: "<h1>Hello I am here....<h2>"
+
