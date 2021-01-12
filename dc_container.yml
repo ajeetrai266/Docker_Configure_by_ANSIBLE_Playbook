@@ -1,0 +1,49 @@
+- hosts: localhost
+  vars_prompt:
+          - name: "container_name"
+            prompt: "Enter Container Name"
+            private: no
+
+  vars:
+          - container_http_port: "8080"
+  tasks: 
+  - name: "Launch a Container"
+    docker_container:
+            name: "{{ container_name }}"
+            image: "ssh_centos:8"
+            ports:
+                    - "{{ container_http_port }}:80"
+            interactive: yes
+            tty: yes
+            detach: yes
+            state: started
+    register: dc
+
+  - name: "Print the Container IP"
+    debug:
+            var: dc.ansible_facts.docker_container.NetworkSettings.IPAddress
+
+  - name: "Update Inventory"
+    replace:
+            path: "/root/inven_ansible"
+            regexp: localhost
+            replace: "{{ dc.ansible_facts.docker_container.NetworkSettings.IPAddress }}"
+
+  - meta: refresh_inventory
+
+- hosts: Container  
+  tasks:
+          
+  - name: "Install HTTPD Software"
+    package:
+        name: "httpd"
+        state: present
+
+  - name: "Deploy file in Document Root"
+    template:
+            src: "ar.html"
+            dest: "/var/www/html/ar.html"
+
+  - name: "Start the HTTPD service"
+    command: "/usr/sbin/httpd"
+
